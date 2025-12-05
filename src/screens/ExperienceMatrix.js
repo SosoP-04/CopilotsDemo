@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, SafeAreaView } from 'react-native';
-import { MATRIX_ITEMS } from '../data/mockData';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Platform, StatusBar } from 'react-native';
+import { MATRIX_CATEGORIES, THEME } from '../data/mockData';
 
-// States: 0 = Null, 1 = Done & Loved, 2 = Want To Try, 3 = Not For Me
 const STATUS_COLORS = { 0: '#eee', 1: '#2ecc71', 2: '#f1c40f', 3: '#e74c3c' };
-const STATUS_LABELS = { 0: 'Tap to rate', 1: '😍 Loved', 2: '🤔 Want to Try', 3: '🚫 Not for me' };
+const STATUS_LABELS = { 0: 'Rate', 1: 'Loved', 2: 'Want To', 3: 'No Way' };
 
 export default function ExperienceMatrix({ onComplete }) {
   const [ratings, setRatings] = useState({});
@@ -15,42 +14,61 @@ export default function ExperienceMatrix({ onComplete }) {
     setRatings({ ...ratings, [item]: next });
   };
 
-  return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.content}>
-        <Text style={styles.title}>The Experience Matrix</Text>
-        <Text style={styles.subtitle}>Define your travel soul. Tap to categorize.</Text>
-        
-        <View style={styles.grid}>
-          {MATRIX_ITEMS.map((item) => (
-            <TouchableOpacity 
-              key={item} 
-              style={[styles.itemBox, { backgroundColor: STATUS_COLORS[ratings[item] || 0] }]}
-              onPress={() => cycleRating(item)}
-            >
-              <Text style={styles.itemText}>{item}</Text>
-              <Text style={styles.statusText}>{STATUS_LABELS[ratings[item] || 0]}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+  // Safe check for data
+  if (!MATRIX_CATEGORIES || MATRIX_CATEGORIES.length === 0) {
+    return <View style={styles.container}><Text>Loading Matrix...</Text></View>;
+  }
 
+  return (
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.title}>The Experience Matrix</Text>
+        <Text style={styles.subtitle}>Fill this to find your travel soulmate.</Text>
+      </View>
+        
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        {MATRIX_CATEGORIES.map((category, index) => (
+          <View key={index} style={styles.section}>
+            {/* Added optional chaining ?. to prevent crashes */}
+            <Text style={styles.sectionTitle}>{category?.title || 'Category'}</Text>
+            <View style={styles.grid}>
+              {(category?.items || []).map((item) => (
+                <TouchableOpacity 
+                  key={item} 
+                  style={[styles.itemBox, { backgroundColor: STATUS_COLORS[ratings[item] || 0] }]}
+                  onPress={() => cycleRating(item)}
+                >
+                  <Text style={styles.itemText}>{item}</Text>
+                  <Text style={styles.statusText}>{STATUS_LABELS[ratings[item] || 0]}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        ))}
+      </ScrollView>
+
+      <View style={styles.footer}>
         <TouchableOpacity style={styles.button} onPress={onComplete}>
-          <Text style={styles.buttonText}>SAVE & FIND MATCHES</Text>
+          <Text style={styles.buttonText}>SAVE PROFILE</Text>
         </TouchableOpacity>
       </View>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
-  content: { padding: 20 },
-  title: { fontSize: 24, fontWeight: 'bold', color: '#1B3A57', marginBottom: 10 },
-  subtitle: { color: '#666', marginBottom: 30 },
+  container: { flex: 1, backgroundColor: THEME.white, paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 40 },
+  header: { padding: 20, backgroundColor: THEME.neutral },
+  title: { fontSize: 24, fontWeight: 'bold', color: THEME.primary },
+  subtitle: { color: '#666' },
+  scrollContent: { padding: 20 },
+  section: { marginBottom: 25 },
+  sectionTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 10, color: THEME.primary },
   grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
-  itemBox: { width: '48%', padding: 20, borderRadius: 12, marginBottom: 15, alignItems: 'center' },
-  itemText: { fontWeight: 'bold', fontSize: 16, marginBottom: 5 },
-  statusText: { fontSize: 12, color: '#333' },
-  button: { backgroundColor: '#1B3A57', padding: 18, borderRadius: 12, alignItems: 'center', marginTop: 20 },
-  buttonText: { color: '#fff', fontWeight: 'bold' }
+  itemBox: { width: '48%', padding: 15, borderRadius: 8, marginBottom: 10, alignItems: 'center' },
+  itemText: { fontWeight: '600', fontSize: 14, marginBottom: 2, color: '#333' },
+  statusText: { fontSize: 10, color: '#444', textTransform: 'uppercase' },
+  footer: { padding: 20, borderTopWidth: 1, borderColor: '#eee' },
+  button: { backgroundColor: THEME.primary, padding: 18, borderRadius: 12, alignItems: 'center' },
+  buttonText: { color: '#fff', fontWeight: 'bold', fontSize: 16 }
 });
